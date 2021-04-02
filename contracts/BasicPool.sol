@@ -31,6 +31,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract BasicPool is PoolToken, Ownable {
   using SafeMath for uint256;
 
+  // TODO: Implement ERC721 PoolToken's functions
   uint256 private _price;
   uint256 totalTickets = 0;
   mapping(address => uint256) funderTicketAmount;
@@ -60,11 +61,16 @@ contract BasicPool is PoolToken, Ownable {
     for (uint256 i = 0; i < totalTickets; i++) {
       if (ticketToFunder[i] == _funder) {
         result[counter] = i;
-        counter++;
+        counter = counter.add(1);
       }
     }
     return result;
   }
+
+  /*
+    TODO: Parayı yatırdıktan bir süre sonraya kadar çekememe
+    Pool Together'ın para akışını dengeli tutmak için kurduğu bir sistem
+  */
 
   // Pay to contract
   function fundPool(uint256 _tickets) external payable returns (uint256) {
@@ -86,9 +92,9 @@ contract BasicPool is PoolToken, Ownable {
       uint256[] memory userTickets = getTicketsByFunder(msg.sender);
       uint256 rmTicket = userTickets[0];
 
-      totalTickets -= 1;
+      totalTickets = totalTickets.sub(1);
       ticketToFunder[rmTicket] = address(0);
-      funderTicketAmount[msg.sender] -= 1;
+      funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].sub(1);
     }
 
     payable(msg.sender).transfer(_tickets * _price);
@@ -119,6 +125,10 @@ contract BasicPool is PoolToken, Ownable {
     return _amount;
   }
 
+  function getBalance() public view returns (uint256) {
+    return address(this).balance;
+  }
+
   // Get random address internal
   function getRandomWinner() private view returns (address, uint256) {
     address winnerAddress = address(0);
@@ -141,9 +151,10 @@ contract BasicPool is PoolToken, Ownable {
     uint256 prize = totalTickets * _price;
 
     // Reduce total tickets and denominate the winning ticket (by assigning it to a 0 address)
-    totalTickets -= 1;
+    totalTickets = totalTickets.sub(1);
     ticketToFunder[_winnerTicket] = address(0);
     funderTicketAmount[_winner] -= 1;
+    // TODO: Burn ticket
 
     _winner.transfer(prize);
   }
