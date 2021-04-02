@@ -24,7 +24,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     user by a random factor gets all the tokens. In the background contract is supposed to gain
     at least the exact amount (?) to keep everyone's tokens after the game.
     @dev Ticket'ları ERC20 ile yazdım ama hangi ticket'ın kimde olduğunu yazmak için daha kompleks
-    bir versiyon yazılmalı ERC177 ile. Şu anki haliyle token'a gerek olmadan da kod çalışır. 
+    bir versiyon yazılmalı ERC777 ile. Şu anki haliyle token'a gerek olmadan da kod çalışır. 
     @dev Kodun en büyük darboğazı, hem ticket'tan adrese gitmeyi hem ticket silmeyi eklemeyi ekonomik
     olarak yapamaması.
  */
