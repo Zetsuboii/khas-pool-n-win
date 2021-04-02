@@ -79,7 +79,7 @@ contract BasicPool is PoolToken, Ownable {
       mintPoolTokens(msg.sender, 1);
       totalTickets++;
       ticketToFunder[totalTickets] = msg.sender;
-      funderTicketAmount[msg.sender] += 1;
+      funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].add(1);
     }
     require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
 
@@ -153,7 +153,7 @@ contract BasicPool is PoolToken, Ownable {
     // Reduce total tickets and denominate the winning ticket (by assigning it to a 0 address)
     totalTickets = totalTickets.sub(1);
     ticketToFunder[_winnerTicket] = address(0);
-    funderTicketAmount[_winner] -= 1;
+    funderTicketAmount[_winner] = funderTicketAmount[_winner].sub(1);
     // TODO: Burn ticket
 
     _winner.transfer(prize);
