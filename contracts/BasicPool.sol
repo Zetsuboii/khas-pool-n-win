@@ -133,14 +133,20 @@ contract BasicPool is PoolToken, Ownable {
   function getRandomWinner() private view returns (address, uint256) {
     address winnerAddress = address(0);
     uint256 winnerTicket;
-    while (winnerAddress != address(0)) {
-      winnerTicket =
+    for(uint256 i = 0; i<totalTickets; i++){
+        winnerTicket =
         uint256(
           keccak256(abi.encodePacked(block.timestamp, msg.sender, totalTickets))
         ) %
         totalTickets;
-      winnerAddress = ticketToFunder[winnerTicket];
+        if (ticketToFunder[winnerTicket] != address(0)){
+            winnerAddress = ticketToFunder[winnerTicket];
+            break;
+        }
     }
+    
+    require(totalTickets > 0, "Not enough tickets");
+    require(winnerAddress != address(0), "No winner address found");
     return (winnerAddress, winnerTicket);
   }
 
@@ -156,8 +162,12 @@ contract BasicPool is PoolToken, Ownable {
     funderTicketAmount[_winner] = funderTicketAmount[_winner].sub(1);
     // TODO: Burn ticket
 
-    _winner.transfer(prize);
+    //_winner.transfer(prize);
+    (bool sent, ) = _winner.call{value: prize}("");
+    require(sent, "Failed to send AVAX to winner");
+    require(address(this).balance > prize);
   }
+  
 
   // Send to address
   function endGame() external onlyOwner returns (address) {
