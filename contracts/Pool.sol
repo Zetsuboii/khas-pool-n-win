@@ -19,6 +19,12 @@ contract Pool is Ticket, Ownable {
    */
   uint private _nonceId = 0;
   uint256 private _price;
+  uint32 private _deadline = 5 days; 
+  
+  /**
+    @dev Not really sure about this implementation.
+   */
+  mapping(address => uint) acccountToTime;
 
   event PoolEnd(address winner, uint256 prize);
   event PoolFunded(address funder, uint256 tickets);
@@ -40,6 +46,9 @@ contract Pool is Ticket, Ownable {
       createToken(msg.sender, _nonceId);
       _nonceId += 1;
     }
+    
+    acccountToTime[msg.sender] = block.timestamp;
+    
     // TODO: Refund the change
 
     require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
@@ -55,11 +64,10 @@ contract Pool is Ticket, Ownable {
       removeFirstToken(msg.sender);
     }
 
-    // TODO: Refund condition
-
     uint256 refundAmount = _tickets * _price;
     (bool sent, ) = payable(msg.sender).call{ value: refundAmount }("");
 
+    require(block.timestamp >= (acccountToTime[msg.sender] + _deadline), "At least 5 days must pass before a refund");
     require(sent, "Failed to refund AVAX to user");
     require(balanceOf(msg.sender) >= _tickets);
 
