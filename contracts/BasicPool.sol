@@ -46,8 +46,8 @@ contract BasicPool is PoolToken, Ownable {
   }
 
   /**
-    @notice Gets all tickets registered with funder's address
-    @dev This is somewhat different from balanceOf() function implemented in ERC20.sol
+    @dev Gets all tickets registered with funder's address
+    @notice This is somewhat different from balanceOf() function implemented in ERC20.sol
     This function returns ticketId's corresponding to a funder.
    */
   function getTicketsByFunder(address _funder)
@@ -89,8 +89,8 @@ contract BasicPool is PoolToken, Ownable {
   }
 
   /**
-    @notice Refund the bought ticket, contract should pay the money back.
-    @dev A condition for the refund must be implemented 
+    @dev Refund the bought ticket, contract should pay the money back.
+    @notice A condition for the refund must be implemented 
   */
   function refundTicket(uint256 _tickets) external returns (uint256) {
     for (uint256 i = 0; i < _tickets; i++) {
@@ -109,8 +109,8 @@ contract BasicPool is PoolToken, Ownable {
   }
 
   /** 
-    @notice Deposit - Withdraw functions
-    @dev Burada kontratın para kazanması lazım. Hangi fonksiyonlarla para kazanacağından emin olamadım.
+    @dev Deposit - Withdraw functions
+    @notice Burada kontratın para kazanması lazım. Hangi fonksiyonlarla para kazanacağından emin olamadım.
     Doğrudan withdraw-deposit ekledim.
   */
   function deposit(uint256 _amount) private pure returns (uint256) {
@@ -131,14 +131,14 @@ contract BasicPool is PoolToken, Ownable {
   }
 
   /**
-    @notice Get total balance of the contract
+    @dev Get total balance of the contract
   */
   function getBalance() public view returns (uint256) {
     return address(this).balance;
   }
 
   /**
-    @notice Loop on all tickets until we find a ticket corresponding to a real address. Terminates when
+    @dev Loop on all tickets until we find a ticket corresponding to a real address. Terminates when
     total loops exceeds totalTickets amount 
   */
   function getRandomWinner() private view returns (address, uint256) {
