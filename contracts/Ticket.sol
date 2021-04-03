@@ -31,16 +31,20 @@ contract Ticket is ERC721Enumerable {
     _burn(tokenId);
   }
 
+  function removeToken(uint256 _tokenId) internal {
+    _burn(_tokenId);
+  }
+
   /**
         @dev Pick a random ticket from all tickets and return the owner
     */
-  function getRandomTicketOwner() internal view returns (address) {
+  function getRandomTicket() internal view returns (uint256) {
     uint256 totalTickets = totalSupply();
     uint256 winnerTicket =
       uint256(
         keccak256(abi.encodePacked(block.timestamp, msg.sender, totalTickets))
       ) % totalTickets;
     uint256 ticketID = tokenByIndex(winnerTicket);
-    return ownerOf(ticketID);
+    return ticketID;
   }
 }
