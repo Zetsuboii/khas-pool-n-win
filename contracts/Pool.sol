@@ -14,12 +14,26 @@ contract Pool is Ticket {
     _price = price_;
   }
 
-  function fundPool(uint256 _amount) external payable {
-    for (uint256 i = 0; i < _amount; i++) {
+  function fundPool(uint256 _tickets) external payable {
+    for (uint256 i = 0; i < _tickets; i++) {
       createToken(msg.sender);
     }
 
-    require(msg.value >= _amount * _price, "Enough AVAX isn't supplied");
-    emit PoolFunded(msg.sender, _amount);
+    require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
+    emit PoolFunded(msg.sender, _tickets);
+  }
+
+  function refundTicket(uint256 _tickets) external {
+    for (uint256 i = 0; i < _tickets; i++) {
+      removeFirstToken(msg.sender);
+    }
+
+    uint256 refundAmount = _tickets * _price;
+    (bool sent, ) = payable(msg.sender).call{ value: refundAmount }("");
+
+    require(sent, "Failed to refund AVAX to user");
+    require(balanceOf(msg.sender) >= _tickets);
+
+    emit TicketRefunded(msg.sender, _tickets);
   }
 }
