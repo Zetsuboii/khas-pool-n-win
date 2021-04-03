@@ -4,6 +4,15 @@ pragma solidity ^0.8.0;
 import "./Ticket.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+    @title Pool And Win
+    @notice A token pool where users pay a owner-specified price to by tokens and one 
+    user by a random factor gets all the tokens. In the background contract is supposed
+    to gain at least the exact amount (?) to keep everyone's tokens after the game.
+    @dev Uses ERC721Enumerable tokens
+    @dev Needs to implement financial instruments (namely an interest contract) 
+    in order to function
+ */
 contract Pool is Ticket, Ownable {
   uint256 private _price;
 
@@ -15,19 +24,33 @@ contract Pool is Ticket, Ownable {
     _price = price_;
   }
 
+  /**
+    @dev Payable function to let users buy ticket:
+      - Mints a new token for every ticket and assigns them to the msg.sender
+    @notice Function should return the change to the sender 
+      ( When contract expects 2 AVAX but user sends 5 (unlikely but possible) contract
+      should refund the 3 AVAX back. )
+  */
   function fundPool(uint256 _tickets) external payable {
     for (uint256 i = 0; i < _tickets; i++) {
       createToken(msg.sender);
     }
+    // TODO: Refund the change
 
     require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
     emit PoolFunded(msg.sender, _tickets);
   }
 
+  /**
+    @dev Refund the bought ticket, contract should pay the money back.
+    @notice A condition for the refund must be implemented 
+  */
   function refundTicket(uint256 _tickets) external {
     for (uint256 i = 0; i < _tickets; i++) {
       removeFirstToken(msg.sender);
     }
+
+    // TODO: Refund condition
 
     uint256 refundAmount = _tickets * _price;
     (bool sent, ) = payable(msg.sender).call{ value: refundAmount }("");
@@ -38,10 +61,19 @@ contract Pool is Ticket, Ownable {
     emit TicketRefunded(msg.sender, _tickets);
   }
 
+  /** 
+    @dev Deposit - Withdraw functions
+    @notice Not implemented yet. Possibly, contract does not need to have exactly 
+    two folds of the money users pay. 
+  */
+  // TODO: Implement these functions
   function deposit(uint256 _amount) private pure {}
 
   function withdraw(uint256 _amount) private pure {}
 
+  /**
+    @dev Send prize money to winner. Burns one token.
+  */
   function sendToWinner(address payable _winner, uint256 _winnerTicket)
     private
   {
@@ -53,6 +85,11 @@ contract Pool is Ticket, Ownable {
     require(address(this).balance > prize);
   }
 
+  /**
+    @dev Owner only function to end the game:
+      - Selects a random winner (One winner only at the moment)
+      - Transfers prize to the winner.
+  */
   function endGame() external onlyOwner {
     uint256 winnerTicket = getRandomTicket();
     address payable winner = payable(ownerOf(winnerTicket));
