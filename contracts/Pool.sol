@@ -114,4 +114,8 @@ contract Pool is Ticket, Ownable {
   function testPrize() external view returns(uint256) {
       return totalSupply() * _price;
   }
+  
+  function testExists(uint256 _tokenId) external view returns (bool) {
+    return _exists(_tokenId);
+  }
 }
