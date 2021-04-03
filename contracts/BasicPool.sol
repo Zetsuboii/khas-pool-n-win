@@ -67,12 +67,14 @@ contract BasicPool is PoolToken, Ownable {
     return result;
   }
 
-  /*
-    TODO: Parayı yatırdıktan bir süre sonraya kadar çekememe
-    Pool Together'ın para akışını dengeli tutmak için kurduğu bir sistem
+  /**
+    @dev Payable function to let users buy ticket:
+      - Mints a new token for every ticket and assigns them to the msg.sender
+      - Increases total tickets and tickets corr. to the owner
+    @notice Function should return the change to the sender 
+      ( When contract expects 2 AVAX but user sends 5 (unlikely but possible) contract
+      should refund the 3 AVAX back. )
   */
-
-  // Pay to contract
   function fundPool(uint256 _tickets) external payable returns (uint256) {
     // Add tickets to address
     for (uint256 i = 0; i < _tickets; i++) {
@@ -86,7 +88,10 @@ contract BasicPool is PoolToken, Ownable {
     return totalTickets;
   }
 
-  // Opt-out
+  /**
+    @notice Refund the bought ticket, contract should pay the money back.
+    @dev A condition for the refund must be implemented 
+  */
   function refundTicket(uint256 _tickets) external returns (uint256) {
     for (uint256 i = 0; i < _tickets; i++) {
       uint256[] memory userTickets = getTicketsByFunder(msg.sender);
@@ -104,10 +109,10 @@ contract BasicPool is PoolToken, Ownable {
   }
 
   /** 
-        @notice Deposit - Withdraw functions
-        @dev Burada kontratın para kazanması lazım. Hangi fonksiyonlarla para kazanacağından emin olamadım.
-        Doğrudan withdraw-deposit ekledim.
-    */
+    @notice Deposit - Withdraw functions
+    @dev Burada kontratın para kazanması lazım. Hangi fonksiyonlarla para kazanacağından emin olamadım.
+    Doğrudan withdraw-deposit ekledim.
+  */
   function deposit(uint256 _amount) private pure returns (uint256) {
     // require(depositToken.transferFrom(msg.sender, address(this), _amount), "PoolToken::deposit: Transfer failed");
     // _approveDepositToken(_amount);
@@ -125,31 +130,40 @@ contract BasicPool is PoolToken, Ownable {
     return _amount;
   }
 
+  /**
+    @notice Get total balance of the contract
+  */
   function getBalance() public view returns (uint256) {
     return address(this).balance;
   }
 
-  // Get random address internal
+  /**
+    @notice Loop on all tickets until we find a ticket corresponding to a real address. Terminates when
+    total loops exceeds totalTickets amount 
+  */
   function getRandomWinner() private view returns (address, uint256) {
     address winnerAddress = address(0);
     uint256 winnerTicket;
-    for(uint256 i = 0; i<totalTickets; i++){
-        winnerTicket =
+    for (uint256 i = 0; i < totalTickets; i++) {
+      winnerTicket =
         uint256(
           keccak256(abi.encodePacked(block.timestamp, msg.sender, totalTickets))
         ) %
         totalTickets;
-        if (ticketToFunder[winnerTicket] != address(0)){
-            winnerAddress = ticketToFunder[winnerTicket];
-            break;
-        }
+      if (ticketToFunder[winnerTicket] != address(0)) {
+        winnerAddress = ticketToFunder[winnerTicket];
+        break;
+      }
     }
-    
+
     require(totalTickets > 0, "Not enough tickets");
     require(winnerAddress != address(0), "No winner address found");
     return (winnerAddress, winnerTicket);
   }
 
+  /**
+    @dev Send prize money to winner. Reduce total tickets and tickets corr. to the owner.
+  */
   function sendToWinner(address payable _winner, uint256 _winnerTicket)
     private
   {
@@ -163,13 +177,16 @@ contract BasicPool is PoolToken, Ownable {
     // TODO: Burn ticket
 
     //_winner.transfer(prize);
-    (bool sent, ) = _winner.call{value: prize}("");
+    (bool sent, ) = _winner.call{ value: prize }("");
     require(sent, "Failed to send AVAX to winner");
     require(address(this).balance > prize);
   }
-  
 
-  // Send to address
+  /**
+    @dev Owner only function to end the game:
+      - Selects a random winner (One winner only at the moment)
+      - Transfers prize to the winner.
+  */
   function endGame() external onlyOwner returns (address) {
     (address winner, uint256 winnerTicket) = getRandomWinner();
     address payable winnerPayable = payable(winner);
