@@ -14,6 +14,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     in order to function
  */
 contract Pool is Ticket, Ownable {
+  /**
+    @dev _nonceId is a ever-increasing index to 
+   */
+  uint private _nonceId = 0;
   uint256 private _price;
 
   event PoolEnd(address winner, uint256 prize);
@@ -33,7 +37,8 @@ contract Pool is Ticket, Ownable {
   */
   function fundPool(uint256 _tickets) external payable {
     for (uint256 i = 0; i < _tickets; i++) {
-      createToken(msg.sender);
+      createToken(msg.sender, _nonceId);
+      _nonceId += 1;
     }
     // TODO: Refund the change
 

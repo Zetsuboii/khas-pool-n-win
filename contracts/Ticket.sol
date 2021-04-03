@@ -17,10 +17,9 @@ contract Ticket is ERC721Enumerable {
   /**
         @dev Create a new token
     */
-  function createToken(address _owner) internal {
-    // LIFO structure (?)
-    uint256 tokenId = totalSupply();
-    _safeMint(_owner, tokenId);
+  function createToken(address _owner, uint _tokenId) internal {
+    // LIFO structure (?) For each user's perspective, yes; otherwise no
+    _safeMint(_owner, _tokenId);
   }
 
   /**
