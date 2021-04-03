@@ -29,45 +29,45 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     olarak yapamaması.
  */
 contract BasicPool is PoolToken, Ownable {
-    using SafeMath for uint256;
+  using SafeMath for uint256;
 
-    // TODO: Implement ERC721 PoolToken's functions
-    uint256 private _price;
-    uint256 totalTickets = 0;
-    mapping(address => uint256) funderTicketAmount;
-    mapping(uint256 => address) ticketToFunder;
+  // TODO: Implement ERC721 PoolToken's functions
+  uint256 private _price;
+  uint256 totalTickets = 0;
+  mapping(address => uint256) funderTicketAmount;
+  mapping(uint256 => address) ticketToFunder;
 
-    event PoolEnd(address winner, uint256 prize);
-    event PoolFunded(address funder, uint256 tickets);
-    event TicketRefunded(address refunder, uint256 tickets);
+  event PoolEnd(address winner, uint256 prize);
+  event PoolFunded(address funder, uint256 tickets);
+  event TicketRefunded(address refunder, uint256 tickets);
 
-    constructor(uint256 price_) {
-        _price = price_;
-    }
+  constructor(uint256 price_) {
+    _price = price_;
+  }
 
-    /**
+  /**
     @dev Gets all tickets registered with funder's address
     @notice This is somewhat different from balanceOf() function implemented in ERC20.sol
     This function returns ticketId's corresponding to a funder.
    */
-    function getTicketsByFunder(address _funder)
-        private
-        view
-        returns (uint256[] memory)
-    {
-        uint256[] memory result = new uint256[](funderTicketAmount[_funder]);
-        uint256 counter = 0;
+  function getTicketsByFunder(address _funder)
+    private
+    view
+    returns (uint256[] memory)
+  {
+    uint256[] memory result = new uint256[](funderTicketAmount[_funder]);
+    uint256 counter = 0;
 
-        for (uint256 i = 0; i < totalTickets; i++) {
-            if (ticketToFunder[i] == _funder) {
-                result[counter] = i;
-                counter = counter.add(1);
-            }
-        }
-        return result;
+    for (uint256 i = 0; i < totalTickets; i++) {
+      if (ticketToFunder[i] == _funder) {
+        result[counter] = i;
+        counter = counter.add(1);
+      }
     }
+    return result;
+  }
 
-    /**
+  /**
     @dev Payable function to let users buy ticket:
       - Mints a new token for every ticket and assigns them to the msg.sender
       - Increases total tickets and tickets corr. to the owner
@@ -75,137 +75,127 @@ contract BasicPool is PoolToken, Ownable {
       ( When contract expects 2 AVAX but user sends 5 (unlikely but possible) contract
       should refund the 3 AVAX back. )
   */
-    function fundPool(uint256 _tickets) external payable returns (uint256) {
-        // Add tickets to address
-        for (uint256 i = 0; i < _tickets; i++) {
-            mintPoolTokens(msg.sender, 1);
-            totalTickets++;
-            ticketToFunder[totalTickets] = msg.sender;
-            funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].add(
-                1
-            );
-        }
-        require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
-
-        return totalTickets;
+  function fundPool(uint256 _tickets) external payable returns (uint256) {
+    // Add tickets to address
+    for (uint256 i = 0; i < _tickets; i++) {
+      mintPoolTokens(msg.sender, 1);
+      totalTickets++;
+      ticketToFunder[totalTickets] = msg.sender;
+      funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].add(1);
     }
+    require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
 
-    /**
+    return totalTickets;
+  }
+
+  /**
     @dev Refund the bought ticket, contract should pay the money back.
     @notice A condition for the refund must be implemented 
   */
-    function refundTicket(uint256 _tickets) external returns (uint256) {
-        for (uint256 i = 0; i < _tickets; i++) {
-            uint256[] memory userTickets = getTicketsByFunder(msg.sender);
-            uint256 rmTicket = userTickets[0];
+  function refundTicket(uint256 _tickets) external returns (uint256) {
+    for (uint256 i = 0; i < _tickets; i++) {
+      uint256[] memory userTickets = getTicketsByFunder(msg.sender);
+      uint256 rmTicket = userTickets[0];
 
-            totalTickets = totalTickets.sub(1);
-            ticketToFunder[rmTicket] = address(0);
-            funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].sub(
-                1
-            );
-        }
-
-        payable(msg.sender).transfer(_tickets * _price);
-
-        require(funderTicketAmount[msg.sender] >= _tickets);
-        return _tickets;
+      totalTickets = totalTickets.sub(1);
+      ticketToFunder[rmTicket] = address(0);
+      funderTicketAmount[msg.sender] = funderTicketAmount[msg.sender].sub(1);
     }
 
-    /** 
+    payable(msg.sender).transfer(_tickets * _price);
+
+    require(funderTicketAmount[msg.sender] >= _tickets);
+    return _tickets;
+  }
+
+  /** 
     @dev Deposit - Withdraw functions
     @notice Burada kontratın para kazanması lazım. Hangi fonksiyonlarla para kazanacağından emin olamadım.
     Doğrudan withdraw-deposit ekledim.
   */
-    function deposit(uint256 _amount) private pure returns (uint256) {
-        // require(depositToken.transferFrom(msg.sender, address(this), _amount), "PoolToken::deposit: Transfer failed");
-        // _approveDepositToken(_amount);
-        // require(compoundToken.mint(_amount) == 0, "PoolToken::deposit: DepositToken mint failed");
-        // _mint(msg.sender, _amount);
+  function deposit(uint256 _amount) private pure returns (uint256) {
+    // require(depositToken.transferFrom(msg.sender, address(this), _amount), "PoolToken::deposit: Transfer failed");
+    // _approveDepositToken(_amount);
+    // require(compoundToken.mint(_amount) == 0, "PoolToken::deposit: DepositToken mint failed");
+    // _mint(msg.sender, _amount);
 
-        return _amount;
-    }
+    return _amount;
+  }
 
-    function withdraw(uint256 _amount) private pure returns (uint256) {
-        // _burn(msg.sender, _amount);
-        // require(compoundToken.redeemUnderlying(_amount) == 0, "PoolToken::withdraw: DepositToken redeem failed");
-        // require(depositToken.transfer(msg.sender, _amount), "PoolToken::withdraw: Transfer failed");
+  function withdraw(uint256 _amount) private pure returns (uint256) {
+    // _burn(msg.sender, _amount);
+    // require(compoundToken.redeemUnderlying(_amount) == 0, "PoolToken::withdraw: DepositToken redeem failed");
+    // require(depositToken.transfer(msg.sender, _amount), "PoolToken::withdraw: Transfer failed");
 
-        return _amount;
-    }
+    return _amount;
+  }
 
-    /**
+  /**
     @dev Get total balance of the contract
   */
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
-    }
+  function getBalance() public view returns (uint256) {
+    return address(this).balance;
+  }
 
-    /**
+  /**
     @dev Loop on all tickets until we find a ticket corresponding to a real address. Terminates when
     total loops exceeds totalTickets amount 
   */
-    function getRandomWinner() private view returns (address, uint256) {
-        address winnerAddress = address(0);
-        uint256 winnerTicket;
-        for (uint256 i = 0; i < totalTickets; i++) {
-            winnerTicket =
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            block.timestamp,
-                            msg.sender,
-                            totalTickets
-                        )
-                    )
-                ) %
-                totalTickets;
-            if (ticketToFunder[winnerTicket] != address(0)) {
-                winnerAddress = ticketToFunder[winnerTicket];
-                break;
-            }
-        }
-
-        require(totalTickets > 0, "Not enough tickets");
-        require(winnerAddress != address(0), "No winner address found");
-        return (winnerAddress, winnerTicket);
+  function getRandomWinner() private view returns (address, uint256) {
+    address winnerAddress = address(0);
+    uint256 winnerTicket;
+    for (uint256 i = 0; i < totalTickets; i++) {
+      winnerTicket =
+        uint256(
+          keccak256(abi.encodePacked(block.timestamp, msg.sender, totalTickets))
+        ) %
+        totalTickets;
+      if (ticketToFunder[winnerTicket] != address(0)) {
+        winnerAddress = ticketToFunder[winnerTicket];
+        break;
+      }
     }
 
-    /**
+    require(totalTickets > 0, "Not enough tickets");
+    require(winnerAddress != address(0), "No winner address found");
+    return (winnerAddress, winnerTicket);
+  }
+
+  /**
     @dev Send prize money to winner. Reduce total tickets and tickets corr. to the owner.
   */
-    function sendToWinner(address payable _winner, uint256 _winnerTicket)
-        private
-    {
-        //uint balance = address(this).balance;
-        uint256 prize = totalTickets * _price;
+  function sendToWinner(address payable _winner, uint256 _winnerTicket)
+    private
+  {
+    //uint balance = address(this).balance;
+    uint256 prize = totalTickets * _price;
 
-        // Reduce total tickets and denominate the winning ticket (by assigning it to a 0 address)
-        totalTickets = totalTickets.sub(1);
-        ticketToFunder[_winnerTicket] = address(0);
-        funderTicketAmount[_winner] = funderTicketAmount[_winner].sub(1);
-        // TODO: Burn ticket
+    // Reduce total tickets and denominate the winning ticket (by assigning it to a 0 address)
+    totalTickets = totalTickets.sub(1);
+    ticketToFunder[_winnerTicket] = address(0);
+    funderTicketAmount[_winner] = funderTicketAmount[_winner].sub(1);
+    // TODO: Burn ticket
 
-        //_winner.transfer(prize);
-        (bool sent, ) = _winner.call{value: prize}("");
-        require(sent, "Failed to send AVAX to winner");
-        require(address(this).balance > prize);
-    }
+    //_winner.transfer(prize);
+    (bool sent, ) = _winner.call{ value: prize }("");
+    require(sent, "Failed to send AVAX to winner");
+    require(address(this).balance > prize, "Insufficient balance");
+  }
 
-    /**
+  /**
     @dev Owner only function to end the game:
       - Selects a random winner (One winner only at the moment)
       - Transfers prize to the winner.
   */
-    function endGame() external onlyOwner returns (address) {
-        (address winner, uint256 winnerTicket) = getRandomWinner();
-        address payable winnerPayable = payable(winner);
+  function endGame() external onlyOwner returns (address) {
+    (address winner, uint256 winnerTicket) = getRandomWinner();
+    address payable winnerPayable = payable(winner);
 
-        emit PoolEnd(winner, address(this).balance);
+    emit PoolEnd(winner, address(this).balance);
 
-        sendToWinner(winnerPayable, winnerTicket);
-        require(totalTickets > 0, "Not enough tickets");
+    sendToWinner(winnerPayable, winnerTicket);
+    require(totalTickets > 0, "Not enough tickets");
 
-        return winner;
-    }
+    return winner;
+  }
 }

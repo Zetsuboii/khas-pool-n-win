@@ -82,7 +82,7 @@ contract Pool is Ticket, Ownable {
 
     (bool sent, ) = _winner.call{ value: prize }("");
     require(sent, "Failed to send AVAX to winner");
-    require(address(this).balance > prize);
+    require(address(this).balance > prize, "Insufficient balance");
   }
 
   /**
@@ -99,5 +99,19 @@ contract Pool is Ticket, Ownable {
     emit PoolEnd(winner, totalSupply() * _price);
 
     require(totalSupply() > 0, "Not enough tickets");
+  }
+  
+  // TEST FUNCTIONS
+  
+  function testRandom() external view returns(uint256) {
+      return getRandomTicket();
+  }
+  
+  function testBalance() external view returns(uint256) {
+      return address(this).balance;
+  }
+  
+  function testPrize() external view returns(uint256) {
+      return totalSupply() * _price;
   }
 }
