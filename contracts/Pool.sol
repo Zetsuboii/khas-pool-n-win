@@ -69,7 +69,7 @@ contract Pool is Ticket, Ownable {
 
     require(block.timestamp >= (acccountToTime[msg.sender] + _deadline), "At least 5 days must pass before a refund");
     require(sent, "Failed to refund AVAX to user");
-    require(balanceOf(msg.sender) >= _tickets);
+    require(balanceOf(msg.sender) >= _tickets && balanceOf(msg.sender) != 0, "Sender doesn't have enough tickets");
 
     emit TicketRefunded(msg.sender, _tickets);
   }
