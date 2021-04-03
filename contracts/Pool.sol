@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./Ticket.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Pool is Ticket {
+contract Pool is Ticket, Ownable {
   uint256 private _price;
 
   event PoolEnd(address winner, uint256 prize);
@@ -35,5 +36,31 @@ contract Pool is Ticket {
     require(balanceOf(msg.sender) >= _tickets);
 
     emit TicketRefunded(msg.sender, _tickets);
+  }
+
+  function deposit(uint256 _amount) private pure {}
+
+  function withdraw(uint256 _amount) private pure {}
+
+  function sendToWinner(address payable _winner, uint256 _winnerTicket)
+    private
+  {
+    uint256 prize = totalSupply() * _price;
+    removeToken(_winnerTicket);
+
+    (bool sent, ) = _winner.call{ value: prize }("");
+    require(sent, "Failed to send AVAX to winner");
+    require(address(this).balance > prize);
+  }
+
+  function endGame() external onlyOwner {
+    uint256 winnerTicket = getRandomTicket();
+    address payable winner = payable(ownerOf(winnerTicket));
+
+    sendToWinner(winner, winnerTicket);
+
+    emit PoolEnd(winner, totalSupply() * _price);
+
+    require(totalSupply() > 0, "Not enough tickets");
   }
 }
