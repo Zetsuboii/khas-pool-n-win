@@ -12,19 +12,20 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     @dev Uses ERC721Enumerable tokens
     @dev Needs to implement financial instruments (namely an interest contract) 
     in order to function
+    @dev What to store in contract and which op.s should we do with NFT index?
  */
 contract Pool is Ticket, Ownable {
   /**
-    @dev _nonceId is a ever-increasing index to 
+    @dev _nonceId is a ever-increasing index to keep track of total tickets created
    */
-  uint private _nonceId = 0;
+  uint256 private _nonceId = 0;
   uint256 private _price;
-  uint32 private _deadline = 5 days; 
-  
+  uint32 private _deadline = 5 days;
+
   /**
     @dev Not really sure about this implementation.
    */
-  mapping(address => uint) acccountToTime;
+  mapping(address => uint256) acccountToTime;
 
   event PoolEnd(address winner, uint256 prize);
   event PoolFunded(address funder, uint256 tickets);
@@ -46,9 +47,9 @@ contract Pool is Ticket, Ownable {
       createToken(msg.sender, _nonceId);
       _nonceId += 1;
     }
-    
+
     acccountToTime[msg.sender] = block.timestamp;
-    
+
     // TODO: Refund the change
 
     require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
@@ -67,9 +68,15 @@ contract Pool is Ticket, Ownable {
     uint256 refundAmount = _tickets * _price;
     (bool sent, ) = payable(msg.sender).call{ value: refundAmount }("");
 
-    require(block.timestamp >= (acccountToTime[msg.sender] + _deadline), "At least 5 days must pass before a refund");
+    require(
+      block.timestamp >= (acccountToTime[msg.sender] + _deadline),
+      "At least 5 days must pass before a refund"
+    );
     require(sent, "Failed to refund AVAX to user");
-    require(balanceOf(msg.sender) >= _tickets && balanceOf(msg.sender) != 0, "Sender doesn't have enough tickets");
+    require(
+      balanceOf(msg.sender) >= _tickets && balanceOf(msg.sender) != 0,
+      "Sender doesn't have enough tickets"
+    );
 
     emit TicketRefunded(msg.sender, _tickets);
   }
@@ -113,21 +120,21 @@ contract Pool is Ticket, Ownable {
 
     require(totalSupply() > 0, "Not enough tickets");
   }
-  
+
   // TEST FUNCTIONS
-  
-  function testRandom() external view returns(uint256) {
-      return getRandomTicket();
+
+  function testRandom() external view returns (uint256) {
+    return getRandomTicket();
   }
-  
-  function testBalance() external view returns(uint256) {
-      return address(this).balance;
+
+  function testBalance() external view returns (uint256) {
+    return address(this).balance;
   }
-  
-  function testPrize() external view returns(uint256) {
-      return totalSupply() * _price;
+
+  function testPrize() external view returns (uint256) {
+    return totalSupply() * _price;
   }
-  
+
   function testExists(uint256 _tokenId) external view returns (bool) {
     return _exists(_tokenId);
   }
