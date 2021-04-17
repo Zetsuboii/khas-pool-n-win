@@ -1,5 +1,5 @@
-var BasicPool = artifacts.require("BasicPool");
+var Pool = artifacts.require("Pool");
 
 module.exports = (deployer) => {
-  deployer.deploy(BasicPool, 100000000);
+  deployer.deploy(Pool, 100000000);
 };

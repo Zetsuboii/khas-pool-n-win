@@ -25,7 +25,7 @@ contract Pool is Ticket, Ownable {
   /**
     @dev Not really sure about this implementation.
    */
-  mapping(address => uint256) acccountToTime;
+  mapping(address => uint256) private acccountToTime;
 
   event PoolEnd(address winner, uint256 prize);
   event PoolFunded(address funder, uint256 tickets);
@@ -50,12 +50,16 @@ contract Pool is Ticket, Ownable {
 
     acccountToTime[msg.sender] = block.timestamp;
 
-    // TODO: Refund the change
-
-    require(msg.value >= _tickets * _price, "Enough AVAX isn't supplied");
+    uint256 cost = _tickets * _price;
+    if (msg.value > cost) {
+        (bool sent, ) = payable(msg.sender).call{value: msg.value - (cost)}("");
+        require(sent);
+    }
+    
+    require(msg.value >= cost, "Enough AVAX isn't supplied");
     emit PoolFunded(msg.sender, _tickets);
   }
-
+  
   /**
     @dev Refund the bought ticket, contract should pay the money back.
     @notice A condition for the refund must be implemented 
@@ -68,6 +72,7 @@ contract Pool is Ticket, Ownable {
     uint256 refundAmount = _tickets * _price;
     (bool sent, ) = payable(msg.sender).call{ value: refundAmount }("");
 
+    // Require that a certain time must pass before a refund
     require(
       block.timestamp >= (acccountToTime[msg.sender] + _deadline),
       "At least 5 days must pass before a refund"
@@ -109,17 +114,23 @@ contract Pool is Ticket, Ownable {
     @dev Owner only function to end the game:
       - Selects a random winner (One winner only at the moment)
       - Transfers prize to the winner.
+    @notice add multiple owners
   */
-  function endGame() external onlyOwner {
+  function endGame() external onlyOwner returns(address) {
     uint256 winnerTicket = getRandomTicket();
     address payable winner = payable(ownerOf(winnerTicket));
+    
+    emit PoolEnd(winner, totalSupply() * _price);
 
     sendToWinner(winner, winnerTicket);
 
-    emit PoolEnd(winner, totalSupply() * _price);
-
     require(totalSupply() > 0, "Not enough tickets");
+  
+    return(winner);
   }
+  
+  receive() external payable {}
+
 
   // TEST FUNCTIONS
 
@@ -137,5 +148,9 @@ contract Pool is Ticket, Ownable {
 
   function testExists(uint256 _tokenId) external view returns (bool) {
     return _exists(_tokenId);
+  }
+  
+  function testAddress() external view returns(address) {
+      return address(this);
   }
 }

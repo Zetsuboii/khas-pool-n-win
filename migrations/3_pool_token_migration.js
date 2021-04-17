@@ -1,5 +1,5 @@
-var PoolToken = artifacts.require("PoolToken");
+var Ticket = artifacts.require("Ticket");
 
 module.exports = (deployer) => {
-  deployer.deploy(PoolToken);
+  deployer.deploy(Ticket);
 };
