@@ -22,11 +22,23 @@ contract('Governance', accounts => {
         const tokenBalance = await instanceTok.balanceOf(accounts[0]);
         assert(tokenBalance == 200000, `Token balances mismatch, expected 20000, got ${tokenBalance}`);
 
-        await instanceGov.makeProposal(555, { from: accounts[0] });
+        await instanceGov.makeProposal(111, { from: accounts[0] });
 
         const proposals = await instanceGov.getAllProposals();
         assert(proposals.length == 1, `Proposal lengths mismatch, expected 1 got ${proposals.length}`);
     });
 
     // 2
+    it('should reject user with insufficent balance', async () => {
+        const tokenBalance = await instanceTok.balanceOf(accounts[1]);
+        assert(tokenBalance == 0, `User shouldn't have tokens before hand, user has ${tokenBalance}`);
+
+        const beforeProposals = await instanceGov.getAllProposals();
+
+        await instanceGov.makeProposal(222, { from: accounts[1] });
+
+        const afterProposals = await instanceGov.getAllProposals();
+        assert(beforeProposals.length != 0, `Users can't make proposals beforehand`);
+        assert(beforeProposals.length == afterProposals.length, `Users can make proposals without enough balance`);
+    })
 });
