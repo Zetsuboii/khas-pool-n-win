@@ -5,6 +5,7 @@ const assert = require('assert');
 /*
     INSTANCE 1: User creates a proposal, has enough funds
     INSTANCE 2: User doesn't have enough funds, tries to create a proposal
+    INSTANCE 3: Another user votes the proposal
 */
 contract('Governance', accounts => {
     let instanceGov;
@@ -16,7 +17,7 @@ contract('Governance', accounts => {
     });
 
     // 1
-    it('should create proposals', async () => {
+    it("should create proposals", async () => {
         await instanceTok.mintTokens(accounts[0], 200000);
 
         const tokenBalance = await instanceTok.balanceOf(accounts[0]);
@@ -29,16 +30,56 @@ contract('Governance', accounts => {
     });
 
     // 2
-    it('should reject user with insufficent balance', async () => {
+    it("should reject user with insufficent balance", async () => {
         const tokenBalance = await instanceTok.balanceOf(accounts[1]);
         assert(tokenBalance == 0, `User shouldn't have tokens before hand, user has ${tokenBalance}`);
 
         const beforeProposals = await instanceGov.getAllProposals();
+        assert(beforeProposals.length > 0, `Users can't propose before hand, there are ${beforeProposals.length} proposals`);
 
         await instanceGov.makeProposal(222, { from: accounts[1] });
 
         const afterProposals = await instanceGov.getAllProposals();
-        assert(beforeProposals.length != 0, `Users can't make proposals beforehand`);
         assert(beforeProposals.length == afterProposals.length, `Users can make proposals without enough balance`);
-    })
+    });
+
+    // 3
+    it("should let users vote with enough balance", async () => {
+        await instanceTok.mintTokens(accounts[2], 200000);
+
+        const tokenBalance = await instanceTok.balanceOf(accounts[2]);
+        assert(tokenBalance == 200000, `Token balances mismatch, expected 20000, got ${tokenBalance}`);
+
+        const beforeProposals = await instanceGov.getAllProposals();
+        assert(beforeProposals.length > 0, `Users can't propose before hand, there are ${beforeProposals.length} proposals`);
+
+        const beforeVote = beforeProposals[0].vote;
+        assert(beforeVote = 0, `There are votes in newly created proposal, beforeVote is ${beforeVote}`);
+
+        await instanceGov.voteProposal(111);
+
+        const afterProposals = await instanceGov.getAllProposals();
+        const afterVote = afterProposals[0].vote;
+
+        assert(beforeVote + 200000 == afterVote, `Users can't vote with enough balance`);
+    });
+
+    // 4
+    it("should reject votes of users with insufficent balance", async () => {
+        const tokenBalance = await instanceTok.balanceOf(accounts[1]);
+        assert(tokenBalance == 0, `User shouldn't have tokens before hand, user has ${tokenBalance}`);
+
+        const beforeProposals = await instanceGov.getAllProposals();
+        assert(beforeProposals.length > 0, `Users can't propose before hand, there are ${beforeProposals.length} proposals`);
+
+        const beforeVote = beforeProposals[0].vote;
+        assert(beforeVote > 0, `Users can't vote beforehand, beforeVote is ${beforeVote}`);
+
+        await instanceGov.voteProposal(111);
+
+        const afterProposals = await instanceGov.getAllProposals();
+        const afterVote = afterProposals[0].vote;
+
+        assert(beforeVote == afterVote, `Users can vote with insufficent balance`);
+    });
 });
