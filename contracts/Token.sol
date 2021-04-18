@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
     @dev Governance Token with limited supply
  */
-contract Token is ERC20Capped is Ownable {
+contract Token is ERC20Capped, Ownable {
     constructor(uint256 _maxSupply)
         ERC20Capped(_maxSupply)
         ERC20("PoolGovernance", "PNWG")
@@ -18,7 +18,7 @@ contract Token is ERC20Capped is Ownable {
         require(_maxSupply > 0, "Max supply can't be 0");
     }
 
-    function mintTokens(address _account, uint _amount) onlyOwner {
+    function mintTokens(address _account, uint256 _amount) public onlyOwner {
         _mint(_account, _amount);
     }
 }
