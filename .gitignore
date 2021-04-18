@@ -1,4 +1,4 @@
 node_modules/
 contracts/artifacts
-build/contracts
 .prettierrc
+build/contracts/
