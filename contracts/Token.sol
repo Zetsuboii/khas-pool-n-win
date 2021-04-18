@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
     @title Pool N Win Governance Token
@@ -9,11 +10,15 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 
     @dev Governance Token with limited supply
  */
-contract Token is ERC20Capped {
+contract Token is ERC20Capped is Ownable {
     constructor(uint256 _maxSupply)
         ERC20Capped(_maxSupply)
         ERC20("PoolGovernance", "PNWG")
     {
         require(_maxSupply > 0, "Max supply can't be 0");
+    }
+
+    function mintTokens(address _account, uint _amount) onlyOwner {
+        _mint(_account, _amount);
     }
 }
