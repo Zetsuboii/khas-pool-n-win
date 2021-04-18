@@ -37,7 +37,12 @@ contract('Governance', accounts => {
         const beforeProposals = await instanceGov.getAllProposals();
         assert(beforeProposals.length > 0, `Users can't propose before hand, there are ${beforeProposals.length} proposals`);
 
-        await instanceGov.makeProposal(222, { from: accounts[1] });
+        try {
+            await instanceGov.makeProposal(222, { from: accounts[1] });
+        } catch (err) {
+            assert(err.reason == "Users must have at least %5 of the total supply to make a proposal", "External error has occured");
+        }
+
 
         const afterProposals = await instanceGov.getAllProposals();
         assert(beforeProposals.length == afterProposals.length, `Users can make proposals without enough balance`);
@@ -54,15 +59,22 @@ contract('Governance', accounts => {
         assert(beforeProposals.length > 0, `Users can't propose before hand, there are ${beforeProposals.length} proposals`);
 
         const beforeVote = beforeProposals[0].vote;
-        assert(beforeVote = 0, `There are votes in newly created proposal, beforeVote is ${beforeVote}`);
+        assert(beforeVote == 0, `There are votes in newly created proposal, beforeVote is ${beforeVote}`);
 
-        await instanceGov.voteProposal(111);
+        await instanceGov.voteProposal(0, { from: accounts[2] });
 
         const afterProposals = await instanceGov.getAllProposals();
         const afterVote = afterProposals[0].vote;
 
-        assert(beforeVote + 200000 == afterVote, `Users can't vote with enough balance`);
+        assert(afterVote >= beforeVote + 200000, `Users can't vote with enough balance, beforeVote = ${beforeVote}, afterVote = ${afterVote}`);
     });
+
+});
+
+/*
+    CASE 2: 5 users each have 200 grands
+
+    INSTANCE 1: 1st user makes a proposal, two of others vote the proposal, last user checks the proposal and sees that it is accepted
 
     // 4
     it("should reject votes of users with insufficent balance", async () => {
@@ -75,11 +87,11 @@ contract('Governance', accounts => {
         const beforeVote = beforeProposals[0].vote;
         assert(beforeVote > 0, `Users can't vote beforehand, beforeVote is ${beforeVote}`);
 
-        await instanceGov.voteProposal(111);
+        await instanceGov.voteProposal(0);
 
         const afterProposals = await instanceGov.getAllProposals();
         const afterVote = afterProposals[0].vote;
 
         assert(beforeVote == afterVote, `Users can vote with insufficent balance`);
     });
-});
+*/
