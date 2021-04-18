@@ -2,8 +2,6 @@ const Governance = artifacts.require('Governance');
 const Token = artifacts.require('Token');
 const assert = require('assert');
 
-const totalSupply = 10 ** 6;
-
 /*
     INSTANCE 1: User creates a proposal, has enough funds
     INSTANCE 2: User doesn't have enough funds, tries to create a proposal
@@ -13,12 +11,12 @@ contract('Governance', accounts => {
     let instanceTok;
 
     beforeEach(async () => {
-        instanceTok = await Token.deployed(totalSupply);
+        instanceTok = await Token.deployed();
         instanceGov = await Governance.deployed();
     });
 
     // 1
-    it('should create proposals', () => {
+    it('should create proposals', async () => {
         await instanceTok.mintTokens(accounts[0], 200000);
 
         const tokenBalance = await instanceTok.balanceOf(accounts[0]);
