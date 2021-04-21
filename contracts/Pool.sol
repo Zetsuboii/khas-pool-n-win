@@ -2,6 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./Ticket.sol";
+import "./Token.sol";
+import "./IPoolToken.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
@@ -21,6 +24,8 @@ contract Pool is Ticket, Ownable {
     uint256 private _price;
     uint32 private _deadline = 5 days;
 
+    IPoolToken public poolToken;
+
     /**
     @dev Not really sure about this implementation.
    */
@@ -30,8 +35,11 @@ contract Pool is Ticket, Ownable {
     event PoolFunded(address funder, uint256 tickets);
     event TicketRefunded(address refunder, uint256 tickets);
 
-    constructor(uint256 price_) {
+    constructor(uint256 price_, address tokenAddress_) {
         _price = price_;
+
+        // Set the poolToken
+        poolToken = Token(tokenAddress_);
     }
 
     /**
@@ -51,8 +59,7 @@ contract Pool is Ticket, Ownable {
 
         uint256 cost = _tickets * _price;
         if (msg.value > cost) {
-            (bool sent, ) =
-                payable(msg.sender).call{value: msg.value - (cost)}("");
+            (bool sent, ) = payable(msg.sender).call{value: msg.value - (cost)}("");
             require(sent);
         }
 
@@ -99,15 +106,32 @@ contract Pool is Ticket, Ownable {
     /**
     @dev Send prize money to winner. Burns one token.
   */
-    function sendToWinner(address payable _winner, uint256 _winnerTicket)
-        private
-    {
+    function sendToWinner(address payable _winner, uint256 _winnerTicket) private {
         uint256 prize = totalSupply() * _price;
         removeToken(_winnerTicket);
 
         (bool sent, ) = _winner.call{value: prize}("");
         require(sent, "Failed to send AVAX to winner");
         require(address(this).balance > prize, "Insufficient balance");
+    }
+
+    function _distributeIncome() private {
+        (address[] memory holders, uint256[] memory balances) = poolToken.getHolders();
+        require(holders.length > 0 && balances.length > 0);
+        uint256 totalBalance = 0;
+        for (uint256 i = 0; i < holders.length; i++) {
+            totalBalance += balances[i];
+        }
+        require(totalBalance > 0);
+        for (uint256 i = 0; i < holders.length; i++) {
+            address payable _holder = payable(holders[i]);
+
+            uint256 _amount = (address(this).balance * balances[i]) / totalBalance;
+            require(address(this).balance > _amount, "Insufficient balance");
+
+            (bool sent, ) = _holder.call{value: _amount}("");
+            require(sent, "Failed to send AVAX to winner");
+        }
     }
 
     /**

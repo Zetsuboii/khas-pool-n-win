@@ -17,21 +17,20 @@ contract("Pool", (accounts) => {
         instance = await Pool.deployed();
     });
 
-    it("should receive payment from user", async () => {
+    it("receive payment from user", async () => {
         const beforeBalance = web3.utils.fromWei(await web3.eth.getBalance(accounts[0]), "wei");
         await instance.fundPool(2, { from: accounts[0], value: toAvax(2) });
         const afterBalance = web3.utils.fromWei(await web3.eth.getBalance(accounts[0]), "wei");
-
-        console.log(beforeBalance - afterBalance);
         assert(afterBalance + toAvax(2) <= beforeBalance);
     });
 
-    it("should give two tickets to user", async () => {
+    it("give two tickets to user", async () => {
         const ticketCount = await instance.balanceOf(accounts[0]);
         assert(ticketCount == 2, `Expected 2 but got ${ticketCount}`);
     });
 });
 
+// Distribute the money to the holders
 contract("Pool", (accounts) => {
     let instance;
 

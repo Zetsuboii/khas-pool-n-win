@@ -29,7 +29,7 @@ contract Governance is Ownable {
 
     uint256 private _idTicker = 0;
     EnumerableSet.UintSet internal proposalIds;
-    mapping(uint256 => EnumerableSet.AddressSet) voters;
+    mapping(uint256 => mapping(address => uint256)) voters;
     mapping(uint256 => Proposal) proposals;
 
     modifier canMakeProposal() {
@@ -37,6 +37,11 @@ contract Governance is Ownable {
             token.balanceOf(msg.sender) >= token.totalSupply() / 20,
             "Users must have at least %5 of the total supply to make a proposal"
         );
+        _;
+    }
+
+    modifier firstVote(uint256 _proposalId) {
+        require(voters[_proposalId][msg.sender] == 0, "User already voted on proposal");
         _;
     }
 
@@ -55,7 +60,6 @@ contract Governance is Ownable {
 
     // Proposals getter
     function getAllProposals() external view returns (Proposal[] memory) {
-        // require
         Proposal[] memory proposalsList = new Proposal[](proposalIds.length());
         for (uint256 i = 0; i < proposalIds.length(); i++) {
             uint256 proposalId = proposalIds.at(i);
@@ -69,17 +73,31 @@ contract Governance is Ownable {
     }
 
     function makeProposal(uint256 _proposalUri) public canMakeProposal {
+        uint256 _userBalance = token.balanceOf(msg.sender);
         proposalIds.add(_idTicker);
-        proposals[_idTicker] = Proposal(_proposalUri, 0, block.timestamp, Status.Created);
+        proposals[_idTicker] = Proposal(
+            _proposalUri,
+            _userBalance,
+            block.timestamp,
+            Status.Created
+        );
         _idTicker += 1;
     }
 
-    function voteProposal(uint256 _proposalId) public canVote validId(_proposalId) {
+    function voteProposal(uint256 _proposalId)
+        public
+        canVote
+        validId(_proposalId)
+        firstVote(_proposalId)
+    {
         // Check if it is rejected/ completed already
         require(checkProposal(_proposalId) == Status.Created, "Can't vote a finished proposal");
 
         // Add token amount
         proposals[_proposalId].vote += token.balanceOf(msg.sender);
+
+        // Set token's voters
+        voters[_proposalId][msg.sender] = token.balanceOf(msg.sender);
 
         // Check again if it is accepted now
         checkProposal(_proposalId);
@@ -109,11 +127,11 @@ contract Governance is Ownable {
         return block.timestamp - (proposals[111].createdTime + _timeLimit);
     }
 
-    function tes2() public view returns (uint256) {
+    function test2() public view returns (uint256) {
         return _timeLimit;
     }
 
-    function tes3() public view returns (uint256) {
+    function test3() public view returns (uint256) {
         return proposals[111].createdTime;
     }
 
