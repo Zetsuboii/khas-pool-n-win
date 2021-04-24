@@ -154,26 +154,4 @@ contract Pool is Ticket, Ownable {
     }
 
     receive() external payable {}
-
-    // TEST FUNCTIONS
-
-    function testRandom() external view returns (uint256) {
-        return getRandomTicket();
-    }
-
-    function testBalance() external view returns (uint256) {
-        return address(this).balance;
-    }
-
-    function testPrize() external view returns (uint256) {
-        return totalSupply() * _price;
-    }
-
-    function testExists(uint256 _tokenId) external view returns (bool) {
-        return _exists(_tokenId);
-    }
-
-    function testAddress() external view returns (address) {
-        return address(this);
-    }
 }
